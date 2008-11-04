@@ -9,13 +9,17 @@ board_height = 18;      //height in grid units of board
 board_width = 10;       //width in grid units of board
 prev_height = 4;        //height in grid units of preview pane
 prev_width = 6;         //width in grid units of preview pane
+saved_height = 4;       //height in grid units of saved pane
+saved_width = 6;        //width in grid units of preview pane
 
 glbl_width = 20;        //width of block
 border_width = 3;       //width of border around board
 board_top = 40;         //top offset of board
 board_left = 40;        //left offset of board
-prev_top = 100;          //top offset of preview box
+prev_top = 100;         //top offset of preview box
 prev_left = 280;        //left offset of preview box
+saved_top = 200;         //top offset of saved box
+saved_left = 280;        //left offset of saved box
 
 level = 0;              //keeps track of the player's level
 lines = 0;              //number of lines a player has cleared
@@ -24,7 +28,8 @@ level_timing = [2, 4, 6, 8, 10, 12, 14, 16, 18, 32, 64];  //number of times per 
 glbl_board = false;     //global board variable
 current_piece = false;  //user-manipulable currently-falling piece
 next_piece = false;     //the next piece
-
+saved_piece = null;
+saved_once = false;
 SQUARE = 0;             //piece types
 TEE = 1;
 STRAIGHT = 2;
@@ -143,6 +148,10 @@ function drawonboard(piece) {
 
 function drawinpreview(piece) {
     translatePos(piece.blocks, prev_top, prev_left, prev_height);
+}
+
+function drawinsaved(piece) {
+    translatePos(piece.blocks, saved_top, saved_left, saved_height);
 }
 
 //checks a grid position for out of bounds
@@ -392,6 +401,7 @@ function initialplace(piece, board) {
 //and returns the piece
 function previewplace() {
     //get next piece from random sequence
+    saved_once = false;
     var piece = nextpiece();
 
     //get preview positions for piece type
@@ -410,8 +420,41 @@ function previewplace() {
     piece.center = piece.blocks[0];
 
     drawinpreview(piece);
-
     return piece;
+}
+
+function savepiece(type) {
+    if(saved_piece == null){
+    //  current_piece = previewplace();
+    } else {
+    //  current_piece = saved_piece;
+        for(var i = 0; i < saved_piece.blocks.length; i++)
+        {
+            document.body.removeChild(saved_piece.blocks[i]);
+        }
+    }
+    //if(!initialplace(current_piece, glbl_board)) { //if this fails, the player loses
+    //    gameover();
+    //    return;
+    //}
+    saved_piece = new Piece(type);
+    var blkpos = prev_positions[saved_piece.type];
+
+    function blockcreate(pos) {
+        var blk = createblock(saved_piece.type);
+        blk.x = pos[0];
+        blk.y = pos[1];
+        
+        saved_piece.addBlock(blk);
+        document.body.appendChild(blk);
+    }
+
+    //map creation function across initial positions
+    map(blockcreate, blkpos);
+    //saved_piece.center = saved_piece.blocks[0];
+    updatekeydiv('');
+    drawinsaved(saved_piece);
+    saved_once = true;
 }
 
 function startgame() {
@@ -419,7 +462,6 @@ function startgame() {
     current_piece = previewplace();
     initialplace(current_piece, glbl_board);
     next_piece = previewplace();
-
     document.onkeydown = function(event) {
         var code = window.event ? window.event.keyCode : event.which;
         arrowkeymap(code);
@@ -448,8 +490,13 @@ function gameover() {
     alert("Game Over.");
 }
 
+
 function arrowkeymap(keycode) {
     //shift left
+    updatekeydiv(keycode +" " +saved_once);
+    if(saved_once == false && keycode == 17) //control key
+        savepiece(current_piece.type);
+
     if(keycode == 37) //left arrow
         shiftleft(current_piece, glbl_board);
 
@@ -527,5 +574,11 @@ function keyhandler(keycode) {
 function updatelines(lines) {
     var span = document.getElementById("lines");
     var text = document.createTextNode("" + lines);
+    span.replaceChild(text, span.firstChild);
+}
+
+function updatekeydiv(keycode){
+    var span = document.getElementById("keycode");
+    var text = document.createTextNode("" + keycode);
     span.replaceChild(text, span.firstChild);
 }

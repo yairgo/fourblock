@@ -18,6 +18,15 @@
   border: solid medium black;
 }
 
+#saved {
+  position: absolute;
+  height: 80px;
+  width: 120px;
+  top: 200px;
+  left: 280px;
+  border: solid medium black;
+}
+
 #lines {
   position: absolute;
   top: 40px;
